@@ -1,18 +1,13 @@
+import pprint
+
+import pycparser
+import pycparser.c_ast
 from pycparser import c_parser
 
-code = r"""
-int main() {
-    int x = 3;
-    if (x > 0) {
-        x = 1;
-    } else {
-        x = -1;
-    }
-    return x;
-}
-"""
+from furohen.utils.file import read_file
 
+code = read_file("./test_data/test_data.c")
 parser = c_parser.CParser()
-ast = parser.parse(code)
+ast: pycparser.c_ast.FileAST = parser.parse(code)
 
-ast.show()
+pprint.pprint(ast.children())
