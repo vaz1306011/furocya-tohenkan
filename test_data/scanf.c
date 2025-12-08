@@ -2,8 +2,8 @@
 
 int main(void) {
   int n;
-  printf("®”‚ð“ü—Í‚µ‚Ä‚­‚¾‚³‚¢: ");
-  scanf_s("%d", &n); // ®”‚ð“Ç‚Ýž‚ÝA•Ï”n‚ÉŠi”[‚·‚é
-  printf("“ü—Í‚³‚ê‚½®”‚Í %d ‚Å‚·B\n", n);
+  printf("æ•´æ•°ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„: ");
+  scanf_s("%d", &n); // æ•´æ•°ã‚’èª­ã¿è¾¼ã¿ã€å¤‰æ•°nã«æ ¼ç´ã™ã‚‹
+  printf("å…¥åŠ›ã•ã‚ŒãŸæ•´æ•°ã¯ %d ã§ã™ã€‚\n", n);
   return 0;
 }
