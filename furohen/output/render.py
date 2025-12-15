@@ -48,9 +48,6 @@ def render(node: Node, filename="flowchart", view=False) -> None:
             g.edge(node.id, line.node.id, label=line.text)
             stack.append(line.node)
 
-    g.node("end", "結束", shape="doublecircle")
-    g.edge(node.id, "end")
-
     g.render(filename, format="pdf", view=view)
 
     render_pdf(g, filename, view)
