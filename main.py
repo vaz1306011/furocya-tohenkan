@@ -9,7 +9,7 @@ from furohen.utils import read_code, read_file, setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-FILE = Path("./test_data/test.c")
+FILE = Path("./test_data/if.c")
 
 if __name__ == "__main__":
     code = read_file(FILE)

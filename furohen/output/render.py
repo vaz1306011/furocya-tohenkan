@@ -12,16 +12,13 @@ logger.setLevel(logging.DEBUG)
 
 def render(node: Node, filename="flowchart", view=False) -> None:
     def render_pdf(g: Digraph, filename: str, view: bool = False):
-        # 自動判斷系統編碼
         enc = locale.getpreferredencoding()
         dot_file = filename + ".dot"
         pdf_file = filename + ".pdf"
 
-        # Step 1：手動以正確編碼寫出 dot
         with open(dot_file, "w", encoding=enc) as f:
             f.write(g.source)
 
-        # Step 2：呼叫 Graphviz 產 PDF
         subprocess.run(["dot", "-Tpdf", dot_file, "-o", pdf_file])
 
         if view:
@@ -55,8 +52,5 @@ def render(node: Node, filename="flowchart", view=False) -> None:
     g.edge(node.id, "end")
 
     g.render(filename, format="pdf", view=view)
-
-    g.node("end", "結束", shape="doublecircle")
-    g.edge(node.id, "end")
 
     render_pdf(g, filename, view)
