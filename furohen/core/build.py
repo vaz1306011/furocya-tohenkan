@@ -5,7 +5,7 @@ from pycparser.c_ast import Node as ASTNode
 from pycparser.c_ast import Return, While
 
 from furohen.convert import to_str
-from furohen.models import FlowContext, Node
+from furohen.models import FlowContext, Node, Shape
 
 stmt_format_mapping = dict()
 
@@ -25,32 +25,6 @@ def register_stmt(fmt: type):
     return decorator
 
 
-# def _build_stmt(stmt) -> FlowContext | None:
-#     if isinstance(stmt, list):
-#         return build_block(stmt)
-#     if isinstance(stmt, (Decl, Assignment, FuncCall)):
-#         return build_simple(stmt)
-#     if isinstance(stmt, If):
-#         return build_if(stmt)
-#     if isinstance(stmt, Compound):
-#         return build_block(stmt.block_items)
-#     if isinstance(stmt, Return):
-#         node = Node(text=to_str(stmt), shape="doublecircle")
-#         return FlowContext(node, [])
-#     if isinstance(stmt, While):
-#         cond_node = Node(text=to_str(stmt.cond), shape="diamond")
-
-#         body_ctx = build_stmt(stmt.stmt)
-#         if body_ctx:
-#             cond_node.add_node(body_ctx.entry, "Yes")
-#             for e in body_ctx.exit:
-#                 e.add_node(cond_node)
-
-#         # No 分支直接接到下一個節點
-#         return FlowContext(cond_node, [cond_node])
-#     return None
-
-
 @register_stmt(list)
 def build_block(body: list[ASTNode]) -> FlowContext | None:
     prev: FlowContext | None = None
@@ -65,9 +39,12 @@ def build_block(body: list[ASTNode]) -> FlowContext | None:
             entry = ctx.entry
 
         if prev:
-            exits = prev.exit if isinstance(prev.exit, list) else [prev.exit]
+            exits = prev.exit
             for e in exits:
-                e.add_node(ctx.entry)
+                if prev.is_while:
+                    e.add_node(ctx.entry, "No", constraint="false")
+                else:
+                    e.add_node(ctx.entry)
 
         prev = ctx
 
@@ -78,7 +55,7 @@ def build_block(body: list[ASTNode]) -> FlowContext | None:
 @register_stmt(Decl)
 @register_stmt(FuncCall)
 def build_simple(stmt: Assignment | Decl | FuncCall) -> FlowContext:
-    n = Node(text=to_str(stmt), shape="box")
+    n = Node(text=to_str(stmt))
     return FlowContext(n, [n])
 
 
@@ -89,7 +66,7 @@ def build_stmt_compound(stmt: Compound) -> FlowContext | None:
 
 @register_stmt(If)
 def build_if(stmt: If) -> FlowContext:
-    cond_node = Node(text=to_str(stmt.cond), shape="diamond")
+    cond_node = Node(text=to_str(stmt.cond), shape=Shape.DIAMOND)
 
     exits: list[Node] = []
 
@@ -120,6 +97,22 @@ def build_if(stmt: If) -> FlowContext:
 
 @register_stmt(Return)
 def build_return(stmt: Return) -> FlowContext:
-    node = Node(text=to_str(stmt), shape="doublecircle")
+    node = Node(text=to_str(stmt), shape=Shape.DOUBLECIRCLE)
     return FlowContext(node, [])
 
+
+@register_stmt(While)
+def build_while(stmt: While) -> FlowContext:
+    cond_node = Node(text=to_str(stmt.cond), shape=Shape.DIAMOND)
+
+    body_ctx = build_stmt(stmt.stmt)
+
+    if not body_ctx:
+        return FlowContext(cond_node, [cond_node], is_while=True)
+
+    cond_node.add_node(body_ctx.entry, "Yes")
+
+    for e in body_ctx.exit:
+        e.add_node(cond_node)
+
+    return FlowContext(cond_node, [cond_node], is_while=True)

@@ -8,5 +8,8 @@ int main() {
     n=11;
     i++; // i の値を1増やす
   }
+  printf("ループ終了後のカウント回数: %d\n", i);
+  printf("終了します。\n");
+  printf("完了。\n");
   return 0;
 }

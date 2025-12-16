@@ -32,20 +32,28 @@ def render(node: Node, filename="flowchart", view=False) -> None:
 
         return pdf_file
 
-    g = Digraph("flowchart")
+    g = Digraph("flowchart", engine="dot")
+    g.attr(
+        rankdir="TB",
+        nodesep="0.8",
+        ranksep="1.0",
+        splines="ortho",
+    )
 
     stack = [node]
-    while True:
-        node = stack.pop()
-        g.node(node.id, node.text, shape=node.shape)
+    visited: set[str] = set()
 
-        if not node.lines:
-            if stack:
-                continue
-            break
+    while stack:
+        node = stack.pop()
+
+        if node.id in visited:
+            continue
+        visited.add(node.id)
+
+        g.node(node.id, node.text, shape=node.shape.value)
 
         for line in node.lines:
-            g.edge(node.id, line.node.id, label=line.text)
+            g.edge(node.id, line.node.id, xlabel=line.text, constraint=line.constraint)
             stack.append(line.node)
 
     g.render(filename, format="pdf", view=view)

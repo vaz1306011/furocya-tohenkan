@@ -7,3 +7,4 @@ class Shape(Enum):
     DIAMOND = "diamond"
     OVAL = "oval"
     NOTE = "note"
+    DOUBLECIRCLE = "doublecircle"

@@ -1,7 +1,10 @@
+from ..enums.shape import Shape
+
+
 class Node:
-    def __init__(self, text: str, shape: str = "box") -> None:
+    def __init__(self, text: str, shape: Shape = Shape.BOX) -> None:
         self.text: str = text
-        self.shape: str = shape
+        self.shape: Shape = shape
         self.lines: list[Line] = []
 
     def __str__(self) -> str:
@@ -14,11 +17,12 @@ class Node:
     def id(self) -> str:
         return str(id(self))
 
-    def add_node(self, node: "Node", text: str = "") -> None:
-        self.lines.append(Line(node, text))
+    def add_node(self, node: "Node", text: str = "", *, constraint="true") -> None:
+        self.lines.append(Line(node, text, constraint=constraint))
 
 
 class Line:
-    def __init__(self, node: Node, text: str = "") -> None:
+    def __init__(self, node: Node, text: str = "", constraint="true") -> None:
         self.text: str = text
         self.node: "Node" = node
+        self.constraint: str = constraint

@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 
-from furohen._node import nprint
 from furohen.core import make
 from furohen.output import render
 from furohen.utils import read_code, read_file, setup_logging
@@ -9,7 +8,7 @@ from furohen.utils import read_code, read_file, setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-FILE = Path("./test_data/if.c")
+FILE = Path("./test_data/while.c")
 
 if __name__ == "__main__":
     code = read_file(FILE)
@@ -19,7 +18,5 @@ if __name__ == "__main__":
     funcs = read_code(code)
 
     nodes = make(funcs)
-
-    nprint(nodes[0])
 
     render(nodes[0], FILE.stem + ".gv", view=True)
