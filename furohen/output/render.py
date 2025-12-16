@@ -11,34 +11,16 @@ logger.setLevel(logging.DEBUG)
 
 
 def render(node: Node, filename="flowchart", view=False) -> None:
-    def render_pdf(g: Digraph, filename: str, view: bool = False):
-        enc = locale.getpreferredencoding()
-        dot_file = filename + ".dot"
-        pdf_file = filename + ".pdf"
-
-        with open(dot_file, "w", encoding=enc) as f:
-            f.write(g.source)
-
-        subprocess.run(["dot", "-Tpdf", dot_file, "-o", pdf_file])
-
-        if view:
-            import os
-
-            (
-                os.startfile(pdf_file)
-                if os.name == "nt"
-                else subprocess.run(["open", pdf_file])
-            )
-
-        return pdf_file
-
     g = Digraph("flowchart", engine="dot")
     g.attr(
         rankdir="TB",
         nodesep="0.8",
         ranksep="1.0",
         splines="ortho",
+        fontname="Microsoft JhengHei",
     )
+    g.attr("node", fontname="Microsoft JhengHei")
+    g.attr("edge", fontname="Microsoft JhengHei")
 
     stack = [node]
     visited: set[str] = set()
@@ -57,5 +39,3 @@ def render(node: Node, filename="flowchart", view=False) -> None:
             stack.append(line.node)
 
     g.render(filename, format="pdf", view=view)
-
-    render_pdf(g, filename, view)
