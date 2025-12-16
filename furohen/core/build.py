@@ -97,7 +97,7 @@ def build_if(stmt: If) -> FlowContext:
 
 @register_stmt(Return)
 def build_return(stmt: Return) -> FlowContext:
-    node = Node(text=to_str(stmt), shape=Shape.DOUBLECIRCLE)
+    node = Node(text=to_str(stmt), shape=Shape.OVAL)
     return FlowContext(node, [])
 
 

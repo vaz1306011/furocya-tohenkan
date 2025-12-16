@@ -16,7 +16,7 @@ def make(funcs: list[FuncDef]) -> list[Node]:
     for func in funcs:
         # 建立函式入口節點
         if func.decl.name == "main":
-            start = Node("開始", shape=Shape.DOUBLECIRCLE)
+            start = Node("開始", shape=Shape.OVAL)
         else:
             start = Node(f"{func.decl.name}を定義", shape=Shape.OVAL)
 
@@ -30,12 +30,12 @@ def make(funcs: list[FuncDef]) -> list[Node]:
             start.add_node(ctx.entry)
 
             # 建立結束節點
-            end = Node("終了", shape=Shape.DOUBLECIRCLE)
+            end = Node("終了", shape=Shape.OVAL)
             for e in ctx.exit:
                 e.add_node(end)
         else:
             # 空函式直接接到結束
-            end = Node("終了", shape=Shape.DOUBLECIRCLE)
+            end = Node("終了", shape=Shape.OVAL)
             start.add_node(end)
 
         head_nodes.append(start)
