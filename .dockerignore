@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__/
+*.py[cod]
+work/
+log/
+node_modules/
+dist/
+out/
+*.gv
+*.gv.*

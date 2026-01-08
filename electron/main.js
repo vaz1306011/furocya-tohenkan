@@ -1,27 +1,6 @@
 const { app, BrowserWindow } = require("electron");
-const { spawn } = require("child_process");
 const http = require("http");
 const path = require("path");
-
-let apiProcess = null;
-
-function startApiServer() {
-  const python = process.env.PYTHON || "python";
-  apiProcess = spawn(
-    python,
-    ["-m", "uvicorn", "api.main:app", "--host", "127.0.0.1", "--port", "8000"],
-    {
-      cwd: path.join(__dirname, ".."),
-      stdio: "inherit",
-    }
-  );
-
-  apiProcess.on("exit", (code) => {
-    if (code !== 0) {
-      console.error(`API server exited with code ${code}`);
-    }
-  });
-}
 
 function waitForServer(url, timeoutMs = 15000) {
   const start = Date.now();
@@ -55,7 +34,7 @@ async function createWindow() {
     },
   });
 
-  const url = "http://127.0.0.1:8000/";
+  const url = process.env.API_URL || "http://127.0.0.1:8000/";
   try {
     await waitForServer(url);
     await win.loadURL(url);
@@ -70,7 +49,6 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
-  startApiServer();
   createWindow();
 
   app.on("activate", () => {
@@ -81,9 +59,6 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (apiProcess) {
-    apiProcess.kill();
-  }
   if (process.platform !== "darwin") {
     app.quit();
   }
