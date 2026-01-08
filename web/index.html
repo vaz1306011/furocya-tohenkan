@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>C Flowchart</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Noto Serif TC", "PingFang TC", "Heiti TC", serif;
+      }
+      body {
+        margin: 24px;
+        background: #f7f3ef;
+        color: #222;
+      }
+      .panel {
+        max-width: 900px;
+        margin: 0 auto 24px auto;
+        padding: 16px 20px;
+        background: #fffaf2;
+        border: 1px solid #e2d7c7;
+        border-radius: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #preview {
+        width: 100%;
+        height: 70vh;
+        border: 1px solid #e2d7c7;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .hidden {
+        display: none;
+      }
+      .error {
+        color: #9b2c2c;
+      }
+      button {
+        background: #c07a3a;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      a.button {
+        display: inline-block;
+        text-decoration: none;
+        background: #2d5d7b;
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <form id="upload-form">
+        <div class="row">
+          <input type="file" name="file" accept=".c" required>
+          <button type="submit">上傳並產生流程圖</button>
+          <a id="download-link" class="button hidden" href="#" download>下載 PDF</a>
+        </div>
+      </form>
+      <p id="status" class="error hidden"></p>
+    </div>
+    <div class="panel hidden" id="preview-panel">
+      <iframe id="preview" title="PDF Preview"></iframe>
+    </div>
+    <script>
+      const form = document.getElementById("upload-form");
+      const status = document.getElementById("status");
+      const previewPanel = document.getElementById("preview-panel");
+      const preview = document.getElementById("preview");
+      const downloadLink = document.getElementById("download-link");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        status.classList.add("hidden");
+        previewPanel.classList.add("hidden");
+        downloadLink.classList.add("hidden");
+
+        const formData = new FormData(form);
+        const response = await fetch("/upload", {
+          method: "POST",
+          headers: { "Accept": "application/json" },
+          body: formData,
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data) {
+          status.textContent = data?.detail || "上傳失敗";
+          status.classList.remove("hidden");
+          return;
+        }
+
+        preview.src = data.view;
+        downloadLink.href = data.download;
+        previewPanel.classList.remove("hidden");
+        downloadLink.classList.remove("hidden");
+      });
+    </script>
+  </body>
+</html>

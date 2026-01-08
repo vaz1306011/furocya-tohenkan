@@ -1,5 +1,6 @@
 *.gv
 *.gv.*
+work/
 
 ### macOS ###
 # General
