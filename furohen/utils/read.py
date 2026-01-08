@@ -11,16 +11,25 @@ logger = logging.getLogger(__name__)
 
 def read_file(file_path: Path) -> Optional[str]:
     try:
+        raw = file_path.read_bytes()
+        for encoding in ("utf-8", "cp932", "shift_jis"):
+            try:
+                content = raw.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                content = None
+        if content is None:
+            raise UnicodeDecodeError("unknown", b"", 0, 0, "decode failed")
+
         file_list = []
-        with open(file_path, "r") as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
-                if line.startswith("#"):
-                    continue
-                line = re.sub(r"//.*", "", line)
-                file_list.append(line)
+        for line in content.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("#"):
+                continue
+            line = re.sub(r"//.*", "", line)
+            file_list.append(line)
         return "\n".join(file_list)
 
     except Exception as e:

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>C Flowchart</title>
+    <title>Cフローチャート</title>
     <style>
       :root {
         color-scheme: light;
@@ -64,14 +64,14 @@
       <form id="upload-form">
         <div class="row">
           <input type="file" name="file" accept=".c" required>
-          <button type="submit">上傳並產生流程圖</button>
-          <a id="download-link" class="button hidden" href="#" download>下載 PDF</a>
+          <button type="submit">アップロードしてフローチャート生成</button>
+          <a id="download-link" class="button hidden" href="#" download>PDFをダウンロード</a>
         </div>
       </form>
       <p id="status" class="error hidden"></p>
     </div>
     <div class="panel hidden" id="preview-panel">
-      <iframe id="preview" title="PDF Preview"></iframe>
+      <iframe id="preview" title="PDFプレビュー"></iframe>
     </div>
     <script>
       const form = document.getElementById("upload-form");
@@ -95,7 +95,7 @@
 
         const data = await response.json().catch(() => null);
         if (!response.ok || !data) {
-          status.textContent = data?.detail || "上傳失敗";
+          status.textContent = data?.detail || "アップロードに失敗しました";
           status.classList.remove("hidden");
           return;
         }
