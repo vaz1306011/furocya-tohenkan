@@ -1,19 +1,21 @@
 FROM python:3.11-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends graphviz \
+    && apt-get install -y --no-install-recommends \
+        graphviz \
+        fontconfig \
+        fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir \
-    fastapi \
-    graphviz \
-    pycparser \
-    python-multipart \
-    uvicorn \
-    vsdx
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
+
+COPY fonts.conf /etc/fonts/local.conf
 
 COPY api ./api
 COPY furohen ./furohen
