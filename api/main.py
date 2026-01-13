@@ -1,4 +1,3 @@
-# api/main.py
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -16,6 +15,9 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 WEB_DIR = BASE_DIR / "web"
 if WEB_DIR.exists():
     app.mount("/web", StaticFiles(directory=WEB_DIR), name="web")
+IMG_DIR = BASE_DIR / "img"
+if IMG_DIR.exists():
+    app.mount("/img", StaticFiles(directory=IMG_DIR), name="img")
 
 
 @app.get("/")

@@ -1,4 +1,3 @@
-# api/routes/upload.py
 import logging
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile

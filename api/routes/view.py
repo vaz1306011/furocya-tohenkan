@@ -1,4 +1,3 @@
-# api/routes/view.py
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
