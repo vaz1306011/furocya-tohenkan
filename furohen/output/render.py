@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def render(node: Node, filename="flowchart", view=False) -> None:
+def render(node: Node | list[Node], filename="flowchart", view=False) -> None:
     g = Digraph("flowchart", engine="dot")
     g.attr(
         rankdir="TB",
@@ -22,7 +22,7 @@ def render(node: Node, filename="flowchart", view=False) -> None:
     g.attr("node", fontname="Microsoft JhengHei")
     g.attr("edge", fontname="Microsoft JhengHei")
 
-    stack = [node]
+    stack = node if isinstance(node, list) else [node]
     visited: set[str] = set()
 
     while stack:

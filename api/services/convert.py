@@ -22,7 +22,7 @@ async def convert_c_to_pdf(file):
         raise ValueError("Failed to read C source")
     funcs = read_code(code)
     nodes = make(funcs)
-    render(nodes[0], str(pdf_path), view=False)
+    render(nodes, str(pdf_path), view=False)
     original_name = Path(file.filename or "flowchart").stem
     name_path.write_text(original_name, encoding="utf-8")
 

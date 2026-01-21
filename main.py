@@ -18,5 +18,4 @@ if __name__ == "__main__":
     funcs = read_code(code)
 
     nodes = make(funcs)
-
-    render(nodes[0], FILE.stem + ".gv", view=True)
+    render(nodes, FILE.stem + ".gv", view=True)
