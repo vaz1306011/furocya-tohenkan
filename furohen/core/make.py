@@ -13,7 +13,13 @@ logger.setLevel(logging.DEBUG)
 def make(funcs: list[FuncDef]) -> list[Node]:
     head_nodes: list[Node] = []
 
-    for func in funcs:
+    def func_sort_key(func: FuncDef) -> tuple[int, str]:
+        name = func.decl.name
+        if name == "main":
+            return (0, "")
+        return (1, name)
+
+    for func in sorted(funcs, key=func_sort_key):
         # 建立函式入口節點
         if func.decl.name == "main":
             start = Node("開始", shape=Shape.OVAL)

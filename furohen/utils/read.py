@@ -38,6 +38,10 @@ def read_file(file_path: Path) -> Optional[str]:
 
 
 def read_code(code: str) -> list[FuncDef]:
+    # pycparser does not accept comments or preprocessor lines.
+    code = re.sub(r"/\*.*?\*/", "", code, flags=re.S)
+    code = re.sub(r"//.*", "", code)
+    code = "\n".join(line for line in code.splitlines() if not line.strip().startswith("#"))
     parser = CParser()
     ast: FileAST = parser.parse(code)
-    return ast.ext
+    return [node for node in ast.ext if isinstance(node, FuncDef)]

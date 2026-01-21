@@ -1,6 +1,6 @@
-import locale
 import logging
 import subprocess
+from collections import deque
 
 from graphviz import Digraph
 
@@ -22,11 +22,11 @@ def render(node: Node | list[Node], filename="flowchart", view=False) -> None:
     g.attr("node", fontname="Microsoft JhengHei")
     g.attr("edge", fontname="Microsoft JhengHei")
 
-    stack = node if isinstance(node, list) else [node]
+    stack = deque(node if isinstance(node, list) else [node])
     visited: set[str] = set()
 
     while stack:
-        node = stack.pop()
+        node = stack.popleft()
 
         if node.id in visited:
             continue
