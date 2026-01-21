@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from pycparser.c_ast import ID, Assignment, BinaryOp, Constant, Decl, FuncCall, If
 from pycparser.c_ast import Node as ASTNode
-from pycparser.c_ast import Return, While
+from pycparser.c_ast import Return, UnaryOp, While
 
 from furohen.exceptions import UnsupportedASTTypeException
 
@@ -78,8 +78,46 @@ def decl_to_str(decl: Decl) -> Optional[str]:
 def funccall_to_str(funccall: FuncCall) -> Optional[str]:
     name = funccall.name.name
     if name == "printf":
+        args = funccall.args.exprs if funccall.args else []
+        format_str = args[0].value if args else '""'
+        fmt = format_str
+        if len(fmt) >= 2 and fmt[0] == '"' and fmt[-1] == '"':
+            fmt = fmt[1:-1]
+        out = []
+        arg_index = 1
+        i = 0
+        while i < len(fmt):
+            if fmt[i] != "%":
+                out.append(fmt[i])
+                i += 1
+                continue
+            if i + 1 < len(fmt) and fmt[i + 1] == "%":
+                out.append("%")
+                i += 2
+                continue
+            j = i + 1
+            while j < len(fmt) and fmt[j] in "0123456789.-+ #hlLzjt":
+                j += 1
+            if j < len(fmt):
+                j += 1
+            if arg_index < len(args):
+                out.append(to_str(args[arg_index]))
+                arg_index += 1
+            i = j
+        return f"\"{''.join(out)}\"を出力"
+    elif name in ("scanf", "scanf_s"):
+        args = funccall.args.exprs if funccall.args else []
+        names: list[str] = []
+        for arg in args[1:]:
+            if isinstance(arg, ID):
+                names.append(arg.name)
+                continue
+            if isinstance(arg, UnaryOp) and arg.op == "&" and hasattr(arg.expr, "name"):
+                names.append(arg.expr.name)
+        if names:
+            return f"{'、'.join(names)}を入力"
         format_str = funccall.args.exprs[0].value
-        return f"{format_str}を出力"
+        return f"{format_str}を入力"
     else:
         return f"{name}を呼び出す"
 
