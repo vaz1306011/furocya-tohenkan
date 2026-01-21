@@ -43,6 +43,14 @@ def assignment_to_str(assignment: Assignment) -> Optional[str]:
     value = to_str(assignment.rvalue)
     if op == "=":
         return f"{name}を{value}になる"
+    if op == "+=":
+        return f"{name}を{value}増やす"
+    if op == "-=":
+        return f"{name}を{value}減らす"
+    if op == "*=":
+        return f"{name}を{value}掛ける"
+    if op == "/=":
+        return f"{name}を{value}割る"
     return None
 
 
@@ -66,6 +74,10 @@ def unaryop_to_str(unary: UnaryOp) -> Optional[str]:
 
     op = unary.op
     expr = to_str(unary.expr)
+    if op in ("p++", "++"):
+        return f"{expr}を1増やす"
+    if op in ("p--", "--"):
+        return f"{expr}を1減らす"
     if op == "&":
         return f"{expr}のアドレス"
     if op == "*":

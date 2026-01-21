@@ -8,6 +8,7 @@ from pycparser.c_ast import (
     Decl,
     Default,
     DoWhile,
+    For,
     FuncCall,
     If,
 )
@@ -228,3 +229,38 @@ def build_do_while(stmt: DoWhile) -> FlowContext:
     cond_node.add_node(body_ctx.entry, "Yes")
 
     return FlowContext(body_ctx.entry, [cond_node], is_while=True)
+
+
+@register_stmt(For)
+def build_for(stmt: For) -> FlowContext:
+    init_node = Node(text=to_str(stmt.init)) if stmt.init else None
+    cond_text = to_str(stmt.cond) if stmt.cond else "true"
+    cond_node = Node(text=cond_text, shape=Shape.DIAMOND)
+    next_node = Node(text=to_str(stmt.next)) if stmt.next else None
+
+    body_ctx = build_stmt(stmt.stmt)
+
+    entry = cond_node
+    if init_node:
+        init_node.add_node(cond_node)
+        entry = init_node
+
+    if body_ctx:
+        cond_node.add_node(body_ctx.entry, "Yes")
+        if next_node:
+            for e in body_ctx.exit:
+                e.add_node(next_node)
+            next_node.add_node(cond_node)
+        else:
+            for e in body_ctx.exit:
+                e.add_node(cond_node)
+    else:
+        empty_body = Node("空の処理")
+        cond_node.add_node(empty_body, "Yes")
+        if next_node:
+            empty_body.add_node(next_node)
+            next_node.add_node(cond_node)
+        else:
+            empty_body.add_node(cond_node)
+
+    return FlowContext(entry, [cond_node], is_while=True)
