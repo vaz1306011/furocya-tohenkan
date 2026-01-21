@@ -36,6 +36,7 @@
         background: #fffaf2;
         border: 1px solid #e2d7c7;
         border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(115, 78, 39, 0.08);
       }
       .row {
         display: flex;
@@ -63,9 +64,20 @@
       #preview {
         width: 100%;
         height: 70vh;
-        border: 1px solid #e2d7c7;
-        border-radius: 12px;
-        background: #fff;
+        border: 1px solid #e8dccb;
+        border-radius: 14px;
+        background: #fffdf8;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      }
+      .preview-title {
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        color: #6b4e2e;
+        margin: 0 0 10px 2px;
+      }
+      .panel--preview {
+        background: linear-gradient(180deg, #fff8ee 0%, #fffdf8 100%);
+        border-color: #e8d9c7;
       }
       .hidden {
         display: none;
@@ -112,7 +124,8 @@
       </form>
       <p id="status" class="error hidden"></p>
     </div>
-    <div class="panel hidden" id="preview-panel">
+    <div class="panel panel--preview hidden" id="preview-panel">
+      <p class="preview-title">PDF プレビュー</p>
       <iframe id="preview" title="PDFプレビュー"></iframe>
     </div>
     <script>
