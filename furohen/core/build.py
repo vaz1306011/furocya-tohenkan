@@ -4,6 +4,7 @@ from pycparser.c_ast import (
     Assignment,
     Break,
     Case,
+    Constant,
     Compound,
     Decl,
     Default,
@@ -13,7 +14,7 @@ from pycparser.c_ast import (
     If,
 )
 from pycparser.c_ast import Node as ASTNode
-from pycparser.c_ast import Return, Switch, While
+from pycparser.c_ast import Continue, Return, Switch, While
 
 from furohen.convert import to_str
 from furohen.models import FlowContext, Node, Shape
@@ -40,26 +41,82 @@ def register_stmt(fmt: type):
 def build_block(body: list[ASTNode]) -> FlowContext | None:
     prev: FlowContext | None = None
     entry: Node | None = None
+    break_exit: list[Node] = []
+    break_labels: dict[Node, str] = {}
+    continue_exit: list[Node] = []
+    continue_labels: dict[Node, str] = {}
+    no_exit: list[Node] = []
 
     for item in body:
+        if isinstance(item, Break):
+            break_node = None
+            if prev:
+                if entry is None:
+                    entry = prev.entry
+                break_exit.extend(prev.exit)
+            else:
+                break_node = Node(text="break")
+                if entry is None:
+                    entry = break_node
+                break_exit.append(break_node)
+            if entry is None:
+                entry = break_node
+            if entry is None:
+                return None
+            return FlowContext(
+                entry,
+                [],
+                break_exit=break_exit,
+                break_labels=break_labels,
+                continue_exit=continue_exit,
+                continue_labels=continue_labels,
+                no_exit=[],
+            )
+
         ctx = build_stmt(item)
         if ctx is None:
             continue
 
         if entry is None:
             entry = ctx.entry
+        if ctx.break_exit and not ctx.is_while:
+            break_exit.extend(ctx.break_exit)
+            break_labels.update(ctx.break_labels)
+        if ctx.continue_exit:
+            continue_exit.extend(ctx.continue_exit)
+            continue_labels.update(ctx.continue_labels)
 
         if prev:
             exits = prev.exit
             for e in exits:
                 if prev.is_while:
                     e.add_node(ctx.entry, "No")
+                elif e in prev.no_exit:
+                    e.add_node(ctx.entry, "No")
                 else:
                     e.add_node(ctx.entry)
+            if prev.is_while and prev.break_exit:
+                for e in prev.break_exit:
+                    label = prev.break_labels.get(e)
+                    if label:
+                        e.add_node(ctx.entry, label)
+                    else:
+                        e.add_node(ctx.entry)
 
         prev = ctx
+        no_exit = ctx.no_exit
 
-    return FlowContext(entry, prev.exit) if entry and prev else None
+    if not entry or not prev:
+        return None
+    return FlowContext(
+        entry,
+        prev.exit,
+        break_exit=break_exit,
+        break_labels=break_labels,
+        continue_exit=continue_exit,
+        continue_labels=continue_labels,
+        no_exit=no_exit,
+    )
 
 
 @register_stmt(Assignment)
@@ -165,30 +222,45 @@ def build_if(stmt: If) -> FlowContext:
     cond_node = Node(text=to_str(stmt.cond), shape=Shape.DIAMOND)
 
     exits: list[Node] = []
+    break_exit: list[Node] = []
+    break_labels: dict[Node, str] = {}
+    continue_exit: list[Node] = []
+    continue_labels: dict[Node, str] = {}
+    no_exit: list[Node] = []
 
-    # yes 分支
-    true_ctx = build_stmt(stmt.iftrue)
-    if true_ctx:
-        cond_node.add_node(true_ctx.entry, "Yes")
-        if isinstance(true_ctx.exit, list):
-            exits.extend(true_ctx.exit)
+    def handle_branch(branch, label: str, *, is_false: bool = False) -> None:
+        if isinstance(branch, Break):
+            break_exit.append(cond_node)
+            break_labels[cond_node] = label
+            return
+        ctx = build_stmt(branch) if branch is not None else None
+        if ctx:
+            cond_node.add_node(ctx.entry, label)
+            exits.extend(ctx.exit if isinstance(ctx.exit, list) else [ctx.exit])
+            if ctx.break_exit:
+                break_exit.extend(ctx.break_exit)
+                break_labels.update(ctx.break_labels)
+            if ctx.continue_exit:
+                continue_exit.extend(ctx.continue_exit)
+                continue_labels.update(ctx.continue_labels)
         else:
-            exits.append(true_ctx.exit)
-    else:
-        exits.append(cond_node)
+            exits.append(cond_node)
+            if is_false:
+                no_exit.append(cond_node)
 
-    # no 分支
-    false_ctx = build_stmt(stmt.iffalse) if stmt.iffalse else None
-    if false_ctx:
-        cond_node.add_node(false_ctx.entry, "No")
-        if isinstance(false_ctx.exit, list):
-            exits.extend(false_ctx.exit)
-        else:
-            exits.append(false_ctx.exit)
-    else:
-        exits.append(cond_node)
+    # yes / no 分支
+    handle_branch(stmt.iftrue, "Yes")
+    handle_branch(stmt.iffalse, "No", is_false=True)
 
-    return FlowContext(cond_node, exits)
+    return FlowContext(
+        cond_node,
+        exits,
+        break_exit=break_exit,
+        break_labels=break_labels,
+        continue_exit=continue_exit,
+        continue_labels=continue_labels,
+        no_exit=no_exit,
+    )
 
 
 @register_stmt(Return)
@@ -199,6 +271,7 @@ def build_return(stmt: Return) -> FlowContext:
 
 @register_stmt(While)
 def build_while(stmt: While) -> FlowContext:
+    is_infinite = isinstance(stmt.cond, Constant) and stmt.cond.value == "1"
     cond_node = Node(text=to_str(stmt.cond), shape=Shape.DIAMOND)
 
     body_ctx = build_stmt(stmt.stmt)
@@ -209,9 +282,25 @@ def build_while(stmt: While) -> FlowContext:
     cond_node.add_node(body_ctx.entry, "Yes")
 
     for e in body_ctx.exit:
-        e.add_node(cond_node)
+        if not is_infinite and e in body_ctx.no_exit:
+            e.add_node(cond_node, "No")
+        else:
+            e.add_node(cond_node)
+    for e in body_ctx.continue_exit:
+        label = body_ctx.continue_labels.get(e)
+        if label and not is_infinite:
+            e.add_node(cond_node, label)
+        else:
+            e.add_node(cond_node)
 
-    return FlowContext(cond_node, [cond_node], is_while=True)
+    exit_nodes = [] if is_infinite else [cond_node]
+    return FlowContext(
+        cond_node,
+        exit_nodes,
+        is_while=True,
+        break_exit=body_ctx.break_exit,
+        break_labels=body_ctx.break_labels,
+    )
 
 
 @register_stmt(DoWhile)
@@ -224,11 +313,26 @@ def build_do_while(stmt: DoWhile) -> FlowContext:
         return FlowContext(cond_node, [cond_node], is_while=True)
 
     for e in body_ctx.exit:
-        e.add_node(cond_node)
+        if e in body_ctx.no_exit:
+            e.add_node(cond_node, "No")
+        else:
+            e.add_node(cond_node)
+    for e in body_ctx.continue_exit:
+        label = body_ctx.continue_labels.get(e)
+        if label:
+            e.add_node(cond_node, label)
+        else:
+            e.add_node(cond_node)
 
     cond_node.add_node(body_ctx.entry, "Yes")
 
-    return FlowContext(body_ctx.entry, [cond_node], is_while=True)
+    return FlowContext(
+        body_ctx.entry,
+        [cond_node],
+        is_while=True,
+        break_exit=body_ctx.break_exit,
+        break_labels=body_ctx.break_labels,
+    )
 
 
 @register_stmt(For)
@@ -245,15 +349,26 @@ def build_for(stmt: For) -> FlowContext:
         init_node.add_node(cond_node)
         entry = init_node
 
+    def attach_loop_back(target: Node, ctx: FlowContext) -> None:
+        for e in ctx.exit:
+            if e in ctx.no_exit:
+                e.add_node(target, "No")
+            else:
+                e.add_node(target)
+        for e in ctx.continue_exit:
+            label = ctx.continue_labels.get(e)
+            if label:
+                e.add_node(target, label)
+            else:
+                e.add_node(target)
+
     if body_ctx:
         cond_node.add_node(body_ctx.entry, "Yes")
         if next_node:
-            for e in body_ctx.exit:
-                e.add_node(next_node)
+            attach_loop_back(next_node, body_ctx)
             next_node.add_node(cond_node)
         else:
-            for e in body_ctx.exit:
-                e.add_node(cond_node)
+            attach_loop_back(cond_node, body_ctx)
     else:
         empty_body = Node("空の処理")
         cond_node.add_node(empty_body, "Yes")
@@ -263,4 +378,24 @@ def build_for(stmt: For) -> FlowContext:
         else:
             empty_body.add_node(cond_node)
 
-    return FlowContext(entry, [cond_node], is_while=True)
+    loop_break_exit = body_ctx.break_exit if body_ctx else []
+    loop_break_labels = body_ctx.break_labels if body_ctx else {}
+    return FlowContext(
+        entry,
+        [cond_node],
+        is_while=True,
+        break_exit=loop_break_exit,
+        break_labels=loop_break_labels,
+    )
+
+
+@register_stmt(Break)
+def build_break(stmt: Break) -> FlowContext:
+    break_node = Node(text="break")
+    return FlowContext(break_node, [], break_exit=[break_node])
+
+
+@register_stmt(Continue)
+def build_continue(stmt: Continue) -> FlowContext:
+    continue_node = Node(text="continue")
+    return FlowContext(continue_node, [], continue_exit=[continue_node])

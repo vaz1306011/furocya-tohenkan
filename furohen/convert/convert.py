@@ -154,7 +154,10 @@ def funccall_to_str(funccall: FuncCall) -> Optional[str]:
                 out.append(to_str(args[arg_index]))
                 arg_index += 1
             i = j
-        return f"\"{''.join(out)}\"\nを出力"
+        text = "".join(out).replace("\\", "\\\\").replace("\r", "").replace("\n", "\\\\n")
+        if text.endswith("\\\\n"):
+            text = text[:-3]
+        return f"\"{text}\"\nを出力"
     elif name in ("scanf", "scanf_s"):
         args = funccall.args.exprs if funccall.args else []
         names: list[str] = []
