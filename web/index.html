@@ -43,6 +43,23 @@
         align-items: center;
         flex-wrap: wrap;
       }
+      .drop-zone {
+        width: 100%;
+        padding: 18px;
+        border: 2px dashed #c9b8a5;
+        border-radius: 12px;
+        background: #fffdf8;
+        text-align: center;
+        color: #6b4e2e;
+        cursor: pointer;
+      }
+      .drop-zone.dragover {
+        border-color: #c07a3a;
+        background: #fff4e6;
+      }
+      .file-input {
+        display: none;
+      }
       #preview {
         width: 100%;
         height: 70vh;
@@ -84,7 +101,11 @@
     <div class="panel">
       <form id="upload-form">
         <div class="row">
-          <input type="file" name="file" accept=".c" required>
+          <label class="drop-zone" id="drop-zone" for="file-input">
+            ここにCファイルをドラッグ&ドロップ<br>
+            またはクリックして選択
+          </label>
+          <input class="file-input" id="file-input" type="file" name="file" accept=".c" required>
           <button type="submit">アップロードしてフローチャート生成</button>
           <a id="download-link" class="button hidden" href="#" download>PDFをダウンロード</a>
         </div>
@@ -100,6 +121,38 @@
       const previewPanel = document.getElementById("preview-panel");
       const preview = document.getElementById("preview");
       const downloadLink = document.getElementById("download-link");
+      const dropZone = document.getElementById("drop-zone");
+      const fileInput = document.getElementById("file-input");
+
+      const setDroppedFile = (file) => {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        dropZone.textContent = `選択中: ${file.name}`;
+      };
+
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files.length > 0) {
+          dropZone.textContent = `選択中: ${fileInput.files[0].name}`;
+        }
+      });
+
+      dropZone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropZone.classList.add("dragover");
+      });
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+      });
+      dropZone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("dragover");
+        const file = event.dataTransfer.files[0];
+        if (!file) {
+          return;
+        }
+        setDroppedFile(file);
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
