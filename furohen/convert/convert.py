@@ -39,7 +39,7 @@ def assignment_to_str(assignment: Assignment) -> Optional[str]:
     from furohen.convert.convert import to_str
 
     op = assignment.op
-    name = assignment.lvalue.name
+    name = to_str(assignment.lvalue)
     value = to_str(assignment.rvalue)
     if op == "=":
         return f"{name}を{value}になる"
@@ -58,6 +58,19 @@ def binaryop_to_str(binop: BinaryOp) -> Optional[str]:
 @register_format(Constant)
 def constant_to_str(constant: Constant) -> Optional[str]:
     return constant.value
+
+
+@register_format(UnaryOp)
+def unaryop_to_str(unary: UnaryOp) -> Optional[str]:
+    from furohen.convert.convert import to_str
+
+    op = unary.op
+    expr = to_str(unary.expr)
+    if op == "&":
+        return f"{expr}のアドレス"
+    if op == "*":
+        return f"*{expr}"
+    return f"{op}{expr}"
 
 
 # int x; -> xを宣言
