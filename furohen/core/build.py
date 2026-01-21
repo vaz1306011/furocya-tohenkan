@@ -1,8 +1,18 @@
 from typing import Callable
 
-from pycparser.c_ast import Assignment, Break, Case, Compound, Decl, Default, FuncCall, If, Switch
+from pycparser.c_ast import (
+    Assignment,
+    Break,
+    Case,
+    Compound,
+    Decl,
+    Default,
+    DoWhile,
+    FuncCall,
+    If,
+)
 from pycparser.c_ast import Node as ASTNode
-from pycparser.c_ast import Return, While
+from pycparser.c_ast import Return, Switch, While
 
 from furohen.convert import to_str
 from furohen.models import FlowContext, Node, Shape
@@ -42,7 +52,7 @@ def build_block(body: list[ASTNode]) -> FlowContext | None:
             exits = prev.exit
             for e in exits:
                 if prev.is_while:
-                    e.add_node(ctx.entry, "No", constraint="false")
+                    e.add_node(ctx.entry, "No")
                 else:
                     e.add_node(ctx.entry)
 
@@ -89,7 +99,7 @@ def build_case_block(stmts: list[ASTNode]) -> tuple[Node | None, list[Node], boo
             exits = prev.exit
             for e in exits:
                 if prev.is_while:
-                    e.add_node(ctx.entry, "No", constraint="false")
+                    e.add_node(ctx.entry, "No")
                 else:
                     e.add_node(ctx.entry)
 
@@ -201,3 +211,20 @@ def build_while(stmt: While) -> FlowContext:
         e.add_node(cond_node)
 
     return FlowContext(cond_node, [cond_node], is_while=True)
+
+
+@register_stmt(DoWhile)
+def build_do_while(stmt: DoWhile) -> FlowContext:
+    cond_node = Node(text=to_str(stmt.cond), shape=Shape.DIAMOND)
+
+    body_ctx = build_stmt(stmt.stmt)
+
+    if not body_ctx:
+        return FlowContext(cond_node, [cond_node], is_while=True)
+
+    for e in body_ctx.exit:
+        e.add_node(cond_node)
+
+    cond_node.add_node(body_ctx.entry, "Yes")
+
+    return FlowContext(body_ctx.entry, [cond_node], is_while=True)
