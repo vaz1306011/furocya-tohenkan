@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Optional
 
-from pycparser.c_ast import ID, Assignment, BinaryOp, Constant, Decl, FuncCall, If
+from pycparser.c_ast import ID, Assignment, ArrayRef, BinaryOp, Constant, Decl, FuncCall, If, InitList
 from pycparser.c_ast import Node as ASTNode
 from pycparser.c_ast import Return, UnaryOp, While
 
@@ -60,6 +60,16 @@ def binaryop_to_str(binop: BinaryOp) -> Optional[str]:
 
     left = to_str(binop.left)
     right = to_str(binop.right)
+    op_map = {
+        "==": "と等しい",
+        "!=": "と等しくない",
+        "<": "より小さい",
+        "<=": "以下",
+        ">": "より大きい",
+        ">=": "以上",
+    }
+    if binop.op in op_map:
+        return f"{left}は{right}{op_map[binop.op]}"
     return f"{left} {binop.op} {right}"
 
 
@@ -68,6 +78,21 @@ def constant_to_str(constant: Constant) -> Optional[str]:
     return constant.value
 
 
+@register_format(InitList)
+def initlist_to_str(initlist: InitList) -> Optional[str]:
+    from furohen.convert.convert import to_str
+
+    values = [to_str(expr) for expr in initlist.exprs]
+    return "{ " + ", ".join(values) + " }"
+
+
+@register_format(ArrayRef)
+def arrayref_to_str(arrayref: ArrayRef) -> Optional[str]:
+    from furohen.convert.convert import to_str
+
+    name = to_str(arrayref.name)
+    sub = to_str(arrayref.subscript)
+    return f"{name}[{sub}]"
 @register_format(UnaryOp)
 def unaryop_to_str(unary: UnaryOp) -> Optional[str]:
     from furohen.convert.convert import to_str
@@ -129,7 +154,7 @@ def funccall_to_str(funccall: FuncCall) -> Optional[str]:
                 out.append(to_str(args[arg_index]))
                 arg_index += 1
             i = j
-        return f"\"{''.join(out)}\"を出力"
+        return f"\"{''.join(out)}\"\nを出力"
     elif name in ("scanf", "scanf_s"):
         args = funccall.args.exprs if funccall.args else []
         names: list[str] = []
@@ -154,14 +179,14 @@ def if_to_str(if_stmt: If) -> Optional[str]:
 
     cond = if_stmt.cond
     tail = {
-        "==": "と等しい場合",
-        "!=": "と等しくない場合",
-        "<": "より小さい場合",
-        "<=": "以下の場合",
-        ">": "より大きい場合",
-        ">=": "以上の場合",
+        "==": "と等しい",
+        "!=": "と等しくない",
+        "<": "より小さい",
+        "<=": "以下",
+        ">": "より大きい",
+        ">=": "以上",
     }
-    return f"もし{to_str(cond.left)}が{to_str(cond.right)}{tail[cond.op]}"
+    return f"{to_str(cond.left)}は{to_str(cond.right)}{tail[cond.op]}"
 
 
 @register_format(Return)
